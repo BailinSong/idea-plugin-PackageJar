@@ -1,0 +1,40 @@
+<idea-plugin>
+    <id>com.blueline.idea.plugin.id</id>
+    <name>PackageJar</name>
+    <version>1.0</version>
+    <vendor email="bailinsong@me.com" url="https://github.com/BailinSong/idea-plugin-PackageJar">BlueLine</vendor>
+
+    <description><![CDATA[
+      * Use the right click on the package click [Package 'xxxx']to generate the jar
+
+      Modified from lxlqwo old version
+    ]]></description>
+
+    <change-notes><![CDATA[
+      fix: support IDEA 2108.2.1.<br>
+    ]]>
+    </change-notes>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <idea-version since-build="171"/>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products
+    <depends>com.intellij.modules.lang</depends>
+    -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <action id="PackageJar" class="com.blueline.idea.plugin.packagejar.ui.Action" text="PackageJar"
+                description="PackageJar">
+            <add-to-group group-id="ProjectViewCompileGroup" anchor="after" relative-to-action="Compile"/>
+        </action>
+
+    </actions>
+
+
+</idea-plugin>
