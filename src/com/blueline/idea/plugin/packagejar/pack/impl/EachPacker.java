@@ -24,6 +24,7 @@ import com.intellij.psi.PsiPackage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -95,8 +96,8 @@ public class EachPacker extends Packager {
 
             try {
                 Process process = Runtime.getRuntime().exec(command.toString());
-                BufferedReader stream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
+                BufferedReader stream = new BufferedReader(new InputStreamReader(process.getInputStream(), System.getProperty("sun.jnu.encoding", Charset.defaultCharset().name())));
+                Messages.info(project, Charset.defaultCharset().name());
                 String str;
                 while ((str = stream.readLine()) != null) {
                     Messages.info(project, str);

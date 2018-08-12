@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.blueline.idea.plugin.id</id>
+    <id>com.blueline.idea.plugin.packagejar</id>
     <name>PackageJar</name>
     <version>1.0</version>
     <vendor email="bailinsong@me.com" url="https://github.com/BailinSong/idea-plugin-PackageJar">BlueLine</vendor>

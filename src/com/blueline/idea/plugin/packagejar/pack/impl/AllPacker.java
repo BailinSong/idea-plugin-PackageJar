@@ -23,6 +23,8 @@ import com.intellij.psi.PsiPackage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.Locale;
 
 public class AllPacker extends Packager {
     private DataContext dataContext;
@@ -69,7 +71,7 @@ public class AllPacker extends Packager {
 
         try {
             Process process = Runtime.getRuntime().exec(command.toString());
-            BufferedReader stream = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader stream = new BufferedReader(new InputStreamReader(process.getInputStream(), System.getProperty("sun.jnu.encoding", Charset.defaultCharset().name())));
 
             String str;
             while ((str = stream.readLine()) != null) {
@@ -91,4 +93,6 @@ public class AllPacker extends Packager {
         }
 
     }
+
+
 }
