@@ -1,22 +1,27 @@
 <idea-plugin>
     <id>com.blueline.idea.plugin.packagejar</id>
     <name>PackageJar</name>
-    <version>1.0</version>
+    <version>1.1</version>
     <vendor email="bailinsong@me.com" url="https://github.com/BailinSong/idea-plugin-PackageJar">BlueLine</vendor>
 
-    <description><![CDATA[
-      * Use the right click on the package click [Package 'xxxx']to generate the jar
+    <depends>com.intellij.modules.java</depends>
 
-      Modified from lxlqwo old version
+    <description><![CDATA[
+简单易用的打包工具，安装后，右键src下的任意目录，在菜单中点击Package Jar按>钮，按说明即可导出相应的Jar！ <br>
+A Simple tool to package jar, after the installation, call out the mouse menu on the directory UNDER src, click the Jars Package button, than export the Jar!<br>
+
     ]]></description>
 
     <change-notes><![CDATA[
-      fix: support IDEA 2108.2.1.<br>
+      fix: support IDEA new version<br>
+      fix: <br>
     ]]>
     </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="171"/>
+
+    <idea-version   since-build="203.6668.113"/>
+
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
@@ -26,11 +31,16 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+<!--        <toolWindow canCloseContents="true" anchor="bottom"-->
+<!--                    id="Package Jar"-->
+<!--                    factoryClass="MyBottomWin">-->
+<!--        </toolWindow>-->
+
     </extensions>
 
     <actions>
         <action id="PackageJar" class="com.blueline.idea.plugin.packagejar.ui.Action" text="PackageJar"
-                description="PackageJar">
+                description="Package Selection to Jar">
             <add-to-group group-id="ProjectViewCompileGroup" anchor="after" relative-to-action="Compile"/>
         </action>
 

@@ -1,5 +1,6 @@
 package com.blueline.idea.plugin.packagejar.ui;
 
+import com.blueline.idea.plugin.packagejar.message.Messages;
 import com.blueline.idea.plugin.packagejar.pack.Packager;
 import com.blueline.idea.plugin.packagejar.pack.impl.AllPacker;
 import com.blueline.idea.plugin.packagejar.pack.impl.EachPacker;
@@ -8,7 +9,6 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.compiler.CompilerManager;
-import com.intellij.openapi.compiler.ex.CompilerPathsEx;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -29,13 +29,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static com.blueline.idea.plugin.packagejar.message.Messages.info;
+
 import static com.intellij.openapi.ui.Messages.showErrorDialog;
 
 public class Settings extends JDialog {
     private static File tempFile = null;
+    private final DataContext dataContext;
     private Properties properties = null;
-    private DataContext dataContext;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -121,7 +121,7 @@ public class Settings extends JDialog {
             if (exportPath != null) {
                 this.exportDirectoryField.setText(exportPath.toString());
             } else {
-                exportPath = CompilerPathsEx.getModuleOutputPath(module, false);
+                exportPath = Util.getOutPutPath(module);
                 this.exportDirectoryField.setText(exportPath.toString());
             }
         } catch (IOException var12) {
@@ -130,34 +130,47 @@ public class Settings extends JDialog {
 
     }
 
+    private String getPropertyKey() {
+        Project project = CommonDataKeys.PROJECT.getData(dataContext);
+        Module module = LangDataKeys.MODULE.getData(dataContext);
+        VirtualFile[] virtualFiles = CommonDataKeys.VIRTUAL_FILE_ARRAY.getData(this.dataContext);
+        List<String> names = new ArrayList();
+        VirtualFile[] files = virtualFiles;
+        int length = virtualFiles.length;
+        String pkey = "MDL_" + module.getName();
+        for (int i = 0; i < length; ++i) {
+            VirtualFile file = files[i];
+            PsiDirectory psiDirectory = PsiManager.getInstance(project).findDirectory(file);
+            if (psiDirectory != null) {
+                PsiPackage psiPackage = JavaDirectoryService.getInstance().getPackage(psiDirectory);
+                pkey += "_PKG_" + psiPackage.getQualifiedName();
 
-    private void onExportEachChildrenCheckBoxChange() {
-        if (this.exportEachChildrenCheckBox.isSelected()) {
-            this.exportJarNameField.setEnabled(false);
-        } else {
-            this.exportJarNameField.setEnabled(true);
+            }
         }
-
-    }
-
-    private void onSelectPathButtonAction() {
-        Project project = CommonDataKeys.PROJECT.getData(this.dataContext);
-        FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-        FileChooserConsumerImpl chooserConsumer = new FileChooserConsumerImpl(this.exportDirectoryField);
-        FileChooser.chooseFile(descriptor, project, null, chooserConsumer);
+        return pkey.replace('.', '_');
     }
 
     private void onCancel() {
         this.dispose();
     }
 
+    private void onExportEachChildrenCheckBoxChange() {
+        this.exportJarNameField.setEnabled(!this.exportEachChildrenCheckBox.isSelected());
+
+    }
 
     private void onOK() {
         Project project = CommonDataKeys.PROJECT.getData(this.dataContext);
         Module module = LangDataKeys.MODULE.getData(this.dataContext);
         String exportJarName = this.exportJarNameField.getText();
 
-        exportJarName = exportJarName.trim() + ".jar";
+        if(exportJarName.toLowerCase().trim().endsWith(".jar")){
+            exportJarName = exportJarName.trim();
+        }
+        else{
+            exportJarName = exportJarName.trim() + ".jar";
+        }
+
 
         if (Util.matchFileNamingConventions(exportJarName) && (!exportJarName.equals(""))) {
             String exportJarPath = this.exportDirectoryField.getText().trim();
@@ -184,24 +197,35 @@ public class Settings extends JDialog {
         }
     }
 
-    private String getPropertyKey() {
-        Project project = CommonDataKeys.PROJECT.getData(dataContext);
-        Module module = LangDataKeys.MODULE.getData(dataContext);
-        VirtualFile[] virtualFiles = (VirtualFile[]) CommonDataKeys.VIRTUAL_FILE_ARRAY.getData(this.dataContext);
-        List<String> names = new ArrayList();
-        VirtualFile[] files = virtualFiles;
-        int length = virtualFiles.length;
-        String pkey = "MDL_" + module.getName();
-        for (int i = 0; i < length; ++i) {
-            VirtualFile file = files[i];
-            PsiDirectory psiDirectory = PsiManager.getInstance(project).findDirectory(file);
-            if (psiDirectory != null) {
-                PsiPackage psiPackage = JavaDirectoryService.getInstance().getPackage(psiDirectory);
-                pkey += "_PKG_" + psiPackage.getQualifiedName();
+    private void onSelectPathButtonAction() {
+        Project project = CommonDataKeys.PROJECT.getData(this.dataContext);
+        FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+        FileChooserConsumerImpl chooserConsumer = new FileChooserConsumerImpl(this.exportDirectoryField);
+        FileChooser.chooseFile(descriptor, project, null, chooserConsumer);
+    }
 
+    private void saveOutPutDir(String path) {
+        Project project = CommonDataKeys.PROJECT.getData(dataContext);
+        FileOutputStream out = null;
+        try {
+
+            out = new FileOutputStream(tempFile);
+
+            properties.setProperty(getPropertyKey(), path);
+            properties.store(out, "The New properties file");
+
+        } catch (IOException e) {
+            Messages.getInstance(project).message(e.toString());
+        } finally {
+
+            if (null != out) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    Messages.getInstance(project).message(e.toString());
+                }
             }
         }
-        return pkey.replace('.', '_');
     }
 
     private void saveOutPutJarName(String name) {
@@ -217,7 +241,7 @@ public class Settings extends JDialog {
             properties.store(out, "The New properties file");
 
         } catch (IOException e) {
-            info(project, e.toString());
+            Messages.getInstance(project).message(e.toString());
         } finally {
 
 
@@ -225,38 +249,14 @@ public class Settings extends JDialog {
                 try {
                     out.close();
                 } catch (IOException e) {
-                    info(project, e.toString());
-                }
-            }
-        }
-    }
-
-    private void saveOutPutDir(String path) {
-        Project project = CommonDataKeys.PROJECT.getData(dataContext);
-        FileOutputStream out = null;
-        try {
-
-            out = new FileOutputStream(tempFile);
-
-            properties.setProperty(getPropertyKey(), path);
-            properties.store(out, "The New properties file");
-
-        } catch (IOException e) {
-            info(project, e.toString());
-        } finally {
-
-            if (null != out) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    info(project, e.toString());
+                    Messages.getInstance(project).message(e.toString());
                 }
             }
         }
     }
 
     private class FileChooserConsumerImpl implements Consumer<VirtualFile> {
-        private JTextField ouPutDirectoryField;
+        private final JTextField ouPutDirectoryField;
 
         public FileChooserConsumerImpl(JTextField jTextField) {
             this.ouPutDirectoryField = jTextField;

@@ -5,69 +5,80 @@
 
 package com.blueline.idea.plugin.packagejar.message;
 
-import com.intellij.compiler.impl.ProblemsViewPanel;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowId;
+import com.intellij.openapi.wm.ToolWindowAnchor;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.MessageView;
-import com.intellij.ui.content.MessageView.SERVICE;
+import com.intellij.ui.components.JBScrollPane;
+
+import javax.swing.*;
+import javax.swing.text.DefaultCaret;
+import java.text.MessageFormat;
 
 public class Messages {
-    private static final String ID = "packing";
+    private static final String WINDOW_ID = "Package Jar";
 
-    public Messages() {
+
+    private static final Runnable EMPTY_TASK = () -> {
+    };
+    private static Messages instance;
+    private static ToolWindow window;
+    private JTextPane textPane;
+
+
+    private Messages(Project project) {
+        ToolWindowManager manager = ToolWindowManager.getInstance(project);
+
+        if (window == null) {
+            textPane = new JTextPane();
+            textPane.setEditable(false);
+
+            JBScrollPane scrollPane = new JBScrollPane(textPane);
+            DefaultCaret caret = (DefaultCaret) textPane.getCaret();
+            caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+            textPane.setContentType("text/plain");
+            textPane.setText("");
+
+            window = manager.registerToolWindow(WINDOW_ID, scrollPane, ToolWindowAnchor.BOTTOM);
+            window.show(EMPTY_TASK);
+        }
     }
 
-    private static ProblemsViewPanel getInstance(Project project) {
-        MessageView messageView = SERVICE.getInstance(project);
-        ProblemsViewPanel packMessages = null;
-        Content[] contents = messageView.getContentManager().getContents();
-        int length = contents.length;
+    public static Messages getInstance(Project project) {
 
-        for (int i = 0; i < length; ++i) {
-            Content content = contents[i];
-            if ("packing".equals(content.getTabName())) {
-                packMessages = (ProblemsViewPanel) content.getComponent();
-                break;
+
+        if (instance == null) {
+            synchronized (Messages.class) {
+                if (instance == null) {
+                    instance = new Messages(project);
+                }
             }
         }
+        return instance;
+    }
 
-        if (packMessages != null) {
-            return packMessages;
+    public void clear() {
+        textPane.setText("");
+    }
+
+    public void hide() {
+        window.hide(EMPTY_TASK);
+    }
+
+    public synchronized Messages message(String format, Object... args) {
+        if (textPane.getText().endsWith("\n") || textPane.getText().isEmpty()) {
+
+            textPane.setText(textPane.getText() + MessageFormat.format(format, args) + "\n");
         } else {
-            packMessages = new ProblemsViewPanel(project);
-            Content content = com.intellij.ui.content.ContentFactory.SERVICE.getInstance().createContent(packMessages, "packing", true);
-            messageView.getContentManager().addContent(content);
-            messageView.getContentManager().setSelectedContent(content);
-            return packMessages;
-        }
-    }
-
-    public static void clear(Project project) {
-        MessageView messageView = SERVICE.getInstance(project);
-        Content[] contents = messageView.getContentManager().getContents();
-        int length = contents.length;
-
-        for (int i = 0; i < length; ++i) {
-            Content content = contents[i];
-            if ("packing".equals(content.getTabName())) {
-                ProblemsViewPanel viewPanel = (ProblemsViewPanel) content.getComponent();
-                viewPanel.close();
-                break;
-            }
+            textPane.setText(textPane.getText() + "\n" + MessageFormat.format(format, args) + "\n");
         }
 
+        return this;
     }
 
-    public static void info(Project project, String string) {
-        ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.MESSAGES_WINDOW);
-        if (toolWindow != null) {
-            toolWindow.activate((Runnable) null, false);
-        }
-
-        getInstance(project).addMessage(3, new String[]{string}, (VirtualFile) null, -1, -1, (Object) null);
+    public void show() {
+        window.show(EMPTY_TASK);
     }
+
 }
